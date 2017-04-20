@@ -1,12 +1,17 @@
+// I2C basic callback
+// Receiving end returns what it received to sending end.
+
+
 #include <Wire.h>
 #define LED 13
 #define SLAVE_ADDRESS 0x04 
 #define NUMBER_OF_DATA_SEND 3
-int number = 0;
-int state = 0;
-int data[3] ={1,2,3}; // array for received data
+
+// global variables
+int receivedData = 0;
+int data[NUMBER_OF_DATA_SEND];  // array for received data
 bool dataSendReadyFlag = false;
-//int counter = 0;
+
 
 void setup() {
 pinMode(LED, OUTPUT);
@@ -30,14 +35,20 @@ void receiveData(int byteCount){
 static int howManyDataArrived =0;
 
 while(Wire.available()) {
-  howManyDataArrived++;
-  number = Wire.read();
-  // check number of data 
-  if (howManyDataArrived == NUMBER_OF_DATA_SEND)
-    dataSendReadyFlag = true;
-  //data[howManyDataArrived-1] = number;
+  howManyDataArrived++; // increase data index
+  receivedData = Wire.read(); // read data from i2c
+  data[howManyDataArrived-1] = receivedData; // save data
+  
   Serial.print("data received: ");
-  Serial.println(number);
+  Serial.println(*(data + howManyDataArrived -1));
+
+  // check number of data and do something 
+  if (howManyDataArrived == NUMBER_OF_DATA_SEND)
+  {
+    dataSendReadyFlag = true;
+    howManyDataArrived = 0; // reset
+    }
+  
 
 /*if (number == 1){
 
@@ -60,9 +71,9 @@ void sendData(){
   if (dataSendReadyFlag == true)
   {
     Wire.write(data[sendDataNum]);
-    Serial.println("sending data:");Serial.print(sendDataNum);
+    Serial.print("sending data:");Serial.println(sendDataNum + 1);
     sendDataNum = sendDataNum + 1;
-    if (sendDataNum > 2)
+    if (sendDataNum == NUMBER_OF_DATA_SEND)
     {
       dataSendReadyFlag = false;
       sendDataNum = 0;
@@ -70,6 +81,9 @@ void sendData(){
     
   }
   else
-   Serial.println("i'm being called but NOT sending data");
+  {
+    Serial.println("i'm being called but NOT ready to send data");
+     Wire.write(0xFF);
+  }
  
 }
